@@ -1,5 +1,5 @@
 from tkinter import *
-from tkinter.ttk import *
+from tkinter import ttk
 
 
 class RangeSlider(Frame):
@@ -37,9 +37,14 @@ class RangeSlider(Frame):
         self.selected_bar = None  #Bar selected for movement
 
         self.canvas = Canvas(self, height=self.height, width=self.width)
-        self.canvas.pack()
+        self.canvas.grid(row=0)
+        #self.canvas.pack()
         self.canvas.bind("<Motion>", self.__onclick)
         self.canvas.bind("<B1-Motion>", self.__clicked_move)
+        self.label_in = ttk.Label(self, text=value_display(self.value_min))
+        self.label_in.grid(row=1, sticky=W)
+        self.label_out = ttk.Label(self, text=value_display(self.value_max))
+        self.label_out.grid(row=1, sticky=E)
 
         self.canvas.create_line(*self.slider, fill=RangeSlider.LINE_COLOR, width=RangeSlider.LINE_WIDTH)
         self.bar_in = self.__add_bar(value_min)
@@ -77,9 +82,11 @@ class RangeSlider(Frame):
             if self.selected_bar is self.bar_in:
                 centre_x = min(self.value_to_pos(self.value_out), centre_x)
                 bar_value = self.value_in = self.pos_to_value(centre_x)
+                self.label_in.configure(text=self.value_display(bar_value))
             elif self.selected_bar is self.bar_out:
                 centre_x = max(self.value_to_pos(self.value_in), centre_x)
                 bar_value = self.value_out = self.pos_to_value(centre_x)
+                self.label_out.configure(text=self.value_display(bar_value))
             else:
                 pos_in = self.value_to_pos(self.value_in)
                 pos_out = self.value_to_pos(self.value_out)
@@ -95,8 +102,6 @@ class RangeSlider(Frame):
             self.canvas.coords(self.selected_bar[0], (centre_x - r, centre_y - r, centre_x + r, centre_y + r))
             r = RangeSlider.HEAD_RADIUS_INNER
             self.canvas.coords(self.selected_bar[1], (centre_x - r, centre_y - r, centre_x + r, centre_y + r))
-            self.canvas.itemconfigure(self.selected_bar[2], text=self.value_display(bar_value))
-            # TODO move text?
 
     def __add_bar(self, value):
         centre_x, centre_y = self.value_to_pos(value), self.slider[1]
@@ -113,8 +118,5 @@ class RangeSlider(Frame):
                                         fill=RangeSlider.HEAD_COLOUR_INNER,
                                         width=RangeSlider.HEAD_LINE_WIDTH, outline="", )
 
-        text_y = centre_y + RangeSlider.HEAD_RADIUS + 8  #FIXME awfulness
-        text = self.canvas.create_text(centre_x, text_y, text=self.value_display(value))
-
-        return [outer, inner, text]
+        return [outer, inner]
 
