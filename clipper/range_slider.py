@@ -2,14 +2,6 @@ from tkinter import *
 from tkinter.ttk import *
 
 
-def default_position_to_value(value_min, value_max, position_min, position_max):
-    return lambda p: value_min + (value_max - value_min) * (p - position_min) / (position_max - position_min)
-
-
-def default_value_to_position(value_min, value_max, position_min, position_max):
-    return lambda v: position_min + (position_max - position_min) * (v - value_min) / (value_max - value_min)
-
-
 class RangeSlider(Frame):
     """RangeSlider presents a double-headed slider defining 'in' and 'out', or 'min' and 'max'.
 
@@ -23,23 +15,25 @@ class RangeSlider(Frame):
     HEAD_LINE_WIDTH = 2
     DIGIT_PRECISION = '.1f' # for showing in the canvas
 
-    def __init__(self, master, value_min=0, value_max=1, width=400, height=40,
-                 pos_to_value=default_position_to_value, value_to_pos=default_value_to_position):
+    def __init__(self, master, value_min=0, value_max=1, width=400, height=40, value_display=lambda v: f"{v:0.2f}"):
         Frame.__init__(self, master, height=height, width=width)
         self.master = master
 
         self.value_min = value_min
         self.value_max = value_max
+        self.value_display = value_display
 
         self.height = height
         self.width = width
 
         self.slider = (RangeSlider.HEAD_RADIUS, self.height * 1 / 2,
                        self.width - RangeSlider.HEAD_RADIUS, self.height * 1 / 2)
+
+        self.pos_to_value = lambda p: value_min + (value_max - value_min) * (p - self.slider[0]) / (self.slider[2] - self.slider[0])
+        self.value_to_pos = lambda v: self.slider[0] + (self.slider[2] - self.slider[0]) * (v - value_min) / (value_max - value_min)
+
         self.bar_offset = (-self.HEAD_RADIUS, -self.HEAD_RADIUS, self.HEAD_RADIUS, self.HEAD_RADIUS)
 
-        self.bar_in_position = value_min
-        self.bar_out_position = value_max
         self.selected_bar = None  #Bar selected for movement
 
         self.canvas = Canvas(self, height=self.height, width=self.width)
@@ -52,9 +46,6 @@ class RangeSlider(Frame):
         self.value_in = self.value_min
         self.bar_out = self.__add_bar(value_max)
         self.value_out = self.value_max
-
-        self.pos_to_value = pos_to_value(value_min, value_max, self.slider[0], self.slider[2])
-        self.value_to_pos = value_to_pos(value_min, value_max, self.slider[0], self.slider[2])
 
     def __checkSelection(self, x, y):
         """TODO
@@ -104,11 +95,11 @@ class RangeSlider(Frame):
             self.canvas.coords(self.selected_bar[0], (centre_x - r, centre_y - r, centre_x + r, centre_y + r))
             r = RangeSlider.HEAD_RADIUS_INNER
             self.canvas.coords(self.selected_bar[1], (centre_x - r, centre_y - r, centre_x + r, centre_y + r))
-            self.canvas.itemconfigure(self.selected_bar[2], text=f"{bar_value:0.2f}")
+            self.canvas.itemconfigure(self.selected_bar[2], text=self.value_display(bar_value))
             # TODO move text?
 
-    def __add_bar(self, pos):
-        centre_x, centre_y = self.slider[0]*(1-pos) + self.slider[2]*pos, self.slider[1]*(1-pos) + self.slider[3]*pos
+    def __add_bar(self, value):
+        centre_x, centre_y = self.value_to_pos(value), self.slider[1]
 
         r = RangeSlider.HEAD_RADIUS
         outer = self.canvas.create_oval(centre_x - r, centre_y - r,
@@ -123,7 +114,7 @@ class RangeSlider(Frame):
                                         width=RangeSlider.HEAD_LINE_WIDTH, outline="", )
 
         text_y = centre_y + RangeSlider.HEAD_RADIUS + 8  #FIXME awfulness
-        text = self.canvas.create_text(centre_x, text_y, text=format(pos, RangeSlider.DIGIT_PRECISION))
+        text = self.canvas.create_text(centre_x, text_y, text=self.value_display(value))
 
         return [outer, inner, text]
 
