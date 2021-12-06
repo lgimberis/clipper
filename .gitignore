@@ -1,5 +1,6 @@
 ## CUSTOM ##
-
+*.mp[34]
+ff*.exe
 ##################################
 # Default python .gitignore
 
