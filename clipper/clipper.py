@@ -2,6 +2,7 @@ import locale
 from pathlib import Path
 import subprocess
 import sys
+import time
 import tkinter as tk
 from tkinter import ttk
 
@@ -19,13 +20,13 @@ def timestamp_to_seconds(t):
     return seconds
 
 
-def seconds_to_timestamp(s, level=None):
+def seconds_to_timestamp(s):
     hours, s_current = divmod(int(s), 3600)
     minutes, seconds = divmod(s_current, 60)
 
-    if level=="hours" or (not level and hours > 0):
+    if hours > 0:
         return f"{hours}:{minutes:02}:{seconds:02}"
-    elif level=="minutes" or (not level and minutes > 0):
+    elif minutes > 0:
         return f"{minutes}:{seconds:02}"
     else:
         return f"{seconds}"
@@ -76,7 +77,19 @@ def main(file=None):
         w = RangeSlider(main_frame, value_min=0, value_max=file_duration, value_display=seconds_to_timestamp_builder(file_duration))
         w.grid(row=1)
 
-        b = ttk.Button(main_frame, text="Clip")
+        def clip():
+            b["state"] = "disabled"
+            b["text"] = "Running..."
+            # Grab a timestamp for unique filename
+            file_out = file.with_stem(f"{file.stem}_clip{time.strftime('%H%M%S')}")
+            value_in, value_out = w.get_in_and_out()
+            timestamp_ss = seconds_to_timestamp(value_in)
+            timestamp_t = seconds_to_timestamp(value_out - value_in)
+            master.update()
+            run_clip(file, file_out, timestamp_ss, timestamp_t)
+            master.quit()
+
+        b = ttk.Button(main_frame, text="Clip", command=clip)
         b.grid(row=2, sticky=(tk.E))
 
         tk.mainloop()

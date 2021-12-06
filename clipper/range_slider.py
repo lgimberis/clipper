@@ -52,7 +52,10 @@ class RangeSlider(Frame):
         self.bar_out = self.__add_bar(value_max)
         self.value_out = self.value_max
 
-    def __checkSelection(self, x, y):
+    def get_in_and_out(self):
+        return self.value_in, self.value_out
+
+    def __check_mouse_collision(self, x, y):
         """TODO
         """
 
@@ -72,7 +75,7 @@ class RangeSlider(Frame):
             return None
 
     def __onclick(self, event):
-        self.selected_bar = self.__checkSelection(event.x, event.y)
+        self.selected_bar = self.__check_mouse_collision(event.x, event.y)
         cursor = ("hand2" if self.selected_bar else "")
         self.canvas.config(cursor=cursor)
 
