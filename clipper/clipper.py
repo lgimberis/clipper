@@ -24,25 +24,23 @@ class Clipper:
         self.master.title('Clipper')
 
         self.range_slider = RangeSlider(self.master,
-                                        value_min=0, value_max=1,
-                                        value_display=lambda v: "??:??")
+                                        value_min=0, value_max=1)
         self.range_slider.grid(row=1, column=1, columnspan=3)
 
-        self.button_clip = ttk.Button(self.master, command=self.clip, state="disabled",
-                                      text=self.BUTTON_CLIP_ENABLED_TEXT)
+        self.button_clip = ttk.Button(self.master, command=self.clip, text=self.BUTTON_CLIP_ENABLED_TEXT)
         self.button_clip.grid(row=2, rowspan=2, column=3, sticky="E")
 
         self.button_open = ttk.Button(self.master, text="Open File", command=self.select_new_file)
         self.button_open.grid(row=2, rowspan=2, column=1, sticky="W")
 
-        self.label_filename = ttk.Label(self.master, text="No file selected!")
+        self.label_filename = ttk.Label(self.master)
         self.label_filename.grid(row=2, column=2, sticky="NESW")
 
         self.label_status = ttk.Label(self.master, text="")
         self.label_status.grid(row=3, column=2, sticky="NESW")
 
         self.use_negative_ts = tk.IntVar()
-        self.use_negative_ts.set(0)
+        self.use_negative_ts.set(1)
         self.negative_ts_checkbox = ttk.Checkbutton(self.master, text="Avoid negative timestamps (video only)", variable=self.use_negative_ts)
         self.negative_ts_checkbox.grid(row=4, column=1, columnspan=3, sticky="NW")
 
@@ -51,6 +49,8 @@ class Clipper:
         if _file:
             # When starting up with a file in args, open it without the prompt
             self.select_new_file(_file)
+        else:
+            self.no_file_selected()
         self.master.mainloop()
 
     def select_new_file(self, _file=""):
@@ -82,9 +82,22 @@ class Clipper:
                 self.label_filename["text"] = label_text.strip()
                 self.label_status["text"] = ""
 
+    def no_file_selected(self):
+        """Correctly set label text and other state variables for having no file selected.
+        """
+        self.label_filename["text"] = "No file selected!"
+        self.range_slider.change_display(value_display=lambda v:"??:??")
+        self.button_clip["state"] = "disabled"
+
     def clip(self):
         """Perform the primary 'clipping' operation with the given in-out marks on the chosen file.
         """
+
+        if not self.file.is_file():
+            self.file = Path()
+            self.label_status["text"] = "The chosen file appears to have been deleted.\nOperation cancelled."
+            self.no_file_selected()
+            return
 
         # Update the button text and grey it out to make it clear it's working
         self.button_clip["state"] = "disabled"
