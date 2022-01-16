@@ -41,6 +41,11 @@ class Clipper:
         self.label_status = ttk.Label(self.master, text="")
         self.label_status.grid(row=3, column=2, sticky="NESW")
 
+        self.use_negative_ts = tk.IntVar()
+        self.use_negative_ts.set(0)
+        self.negative_ts_checkbox = ttk.Checkbutton(self.master, text="Avoid negative timestamps (video only)", variable=self.use_negative_ts)
+        self.negative_ts_checkbox.grid(row=4, column=1, columnspan=3, sticky="NW")
+
         self.file = Path()
         self.file_duration = 1
         if _file:
@@ -95,7 +100,8 @@ class Clipper:
         timestamp_t = Clipper.seconds_to_timestamp(value_out - value_in)
 
         # Run ffmpeg to make the clip
-        Clipper.run_clip(self.file, file_out, timestamp_ss, timestamp_t)
+        avoid_negative_ts = bool(self.use_negative_ts.get())
+        Clipper.run_clip(self.file, file_out, timestamp_ss, timestamp_t, avoid_negative_ts)
 
         # Re-enable the button
         self.button_clip["state"] = "enabled"
@@ -108,16 +114,20 @@ class Clipper:
         self.label_status["text"] = f"Exported clip as {label_file_out}"
 
     @staticmethod
-    def run_clip(file_in: Path, file_out: Path, start: str, duration: str):
+    def run_clip(file_in: Path, file_out: Path, start: str, duration: str, avoid_negative_ts: bool):
         """Run ffmpeg to cut file_in from start for time duration, and save as file_out.
 
         -map 0 is passed to ensure all streams are copied.
         -disposition:a 0 is passed to ensure players such as VLC don't choose the incorrect audio track as 'default'.
         """
 
+        output_arguments = ['-c', 'copy', '-map', '0', '-disposition:a', '0', '-t', duration]
+        if avoid_negative_ts:
+            output_arguments.append('-avoid_negative_ts')
+            output_arguments.append('make_zero')
         ff = ffmpy.FFmpeg(
             inputs={str(file_in): ['-ss', start]},
-            outputs={str(file_out): ['-c', 'copy', '-map', '0', '-disposition:a', '0', '-t', duration]},
+            outputs={str(file_out): output_arguments},
         )
         ff.run(stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
