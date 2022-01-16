@@ -41,7 +41,10 @@ class Clipper:
 
         self.use_negative_ts = tk.IntVar()
         self.use_negative_ts.set(1)
-        self.negative_ts_checkbox = ttk.Checkbutton(self.master, text="Avoid negative timestamps (video only)", variable=self.use_negative_ts)
+        negative_ts_checkbox_text = ("Avoid negative timestamps\n(may retain extra frames on either end of the cuts)")
+        self.negative_ts_checkbox = ttk.Checkbutton(self.master,
+                                                    text=negative_ts_checkbox_text,
+                                                    variable=self.use_negative_ts)
         self.negative_ts_checkbox.grid(row=4, column=1, columnspan=3, sticky="NW")
 
         self.file = Path()
