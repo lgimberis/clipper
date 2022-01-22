@@ -54,6 +54,7 @@ class Clipper:
             self.select_new_file(_file)
         else:
             self.no_file_selected()
+        self.remove_status_text()
         self.master.mainloop()
 
     def select_new_file(self, _file=""):
@@ -74,7 +75,7 @@ class Clipper:
             self.file_duration = Clipper.get_file_duration(self.file)
             if self.file_duration > 0:
                 self.range_slider.change_min_max(0, self.file_duration)
-                self.range_slider.change_display(RangeSlider.timestamp_display_builder(self.file_duration))
+                self.range_slider.change_display(*RangeSlider.timestamp_display_builder(self.file_duration))
                 self.button_clip["state"] = "enabled"
                 if len(self.file.name) > self.MAX_PRINT_FILENAME_CHARACTERS:
                     # Special handling of 'very long' input filenames
@@ -175,6 +176,14 @@ class Clipper:
         minutes, seconds = divmod(remainder, 60)
 
         return f"{hours}:{minutes:02}:{seconds:02}"
+
+    def remove_status_text(self):
+        """Remove the export/status text whenever sliders are moved.
+
+        This prevents confusion as to whether the user remembered to clip their current selection."""
+        if self.range_slider.have_sliders_moved():
+            self.label_status['text'] = ""
+        self.range_slider.after(200, self.remove_status_text)
 
 
 if __name__ == "__main__":
